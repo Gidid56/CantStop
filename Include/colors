@@ -1,0 +1,27 @@
+#pragma once
+#include <array>
+
+enum class Color { White, Blue, Yellow, Green, Orange };
+
+namespace color
+{
+	using RGB = std::array<int, 3>;
+
+	inline constexpr RGB rgb(Color color)
+	{
+		switch (color)
+		{
+		default:
+		case Color::White:
+			return{ 255, 255, 255 };
+		case Color::Blue:
+			return{ 0, 0, 255 };
+		case Color::Yellow:
+			return{ 255, 255, 0 };
+		case Color::Green:
+			return{ 0, 255, 0 };
+		case Color::Orange:
+			return{ 255, 128, 0 };
+		}
+	}
+}

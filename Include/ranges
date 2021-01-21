@@ -1,0 +1,46 @@
+#pragma once
+#include <iterator>
+#include <ranges>
+#include "range/v3/all.hpp"
+
+namespace ranges::detail
+{
+	template <std::input_iterator First, std::sentinel_for<First> Last,
+		typename Proj = std::identity,
+		typename Init = std::invoke_result_t<Proj, std::iter_value_t<First>>,
+		typename Op = std::plus<>>
+		auto accumulate(First first, Last last, Proj proj = Proj{}, Init init = Init{}, Op op = Op{})
+	{
+		while (first != last)
+		{
+			init = std::invoke(op, std::move(init), std::invoke(proj, *first));
+			++first;
+		}
+		return init;
+	}
+}
+
+namespace ranges
+{
+	template<typename Range, typename Proj = identity>
+	bool all_are_unique(Range&& range, Proj proj = Proj{})
+	{
+		return adjacent_find(range, std::equal_to<>(), std::move(proj)) == end(range);
+	}
+
+	template<typename Range, typename Proj = identity>
+	bool all_are_equal(Range&& range, Proj proj = Proj{})
+	{
+		return adjacent_find(range, std::not_equal_to<>(), std::move(proj)) == end(range);
+	}
+
+	template <std::ranges::input_range Range,
+		typename Proj = std::identity,
+		typename Init = std::invoke_result_t<Proj, std::ranges::range_value_t<Range>>,
+		typename Op = std::plus<>>
+	auto sum(Range&& range, Proj proj = Proj{}, Init init = Init{}, Op op = Op{})
+	{
+		return detail::accumulate(std::ranges::begin(range), std::ranges::end(range),
+			std::move(proj), std::move(init), std::move(op));
+	}
+}

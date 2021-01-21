@@ -1,0 +1,67 @@
+#pragma once
+
+namespace unit
+{
+	inline const wchar_t* prefix(int dimension)
+	{
+		switch (dimension)
+		{
+		case -18: return L"a";
+		case -15: return L"f";
+		case -12: return L"p";
+		case  -9: return L"n";
+		case  -6: return L"µ";
+		case  -3: return L"m";
+		case  -2: return L"c";
+		case  -1: return L"d";
+		default:
+		case  0: return L"";
+		case  1: return L"da";
+		case  2: return L"h";
+		case  3: return L"k";
+		case  6: return L"M";
+		case  9: return L"G";
+		case 12: return L"T";
+		case 18: return L"E";
+		}
+	}
+
+	template <class Period>
+	constexpr const wchar_t* prefix()
+	{
+		if constexpr (std::is_same<Period, std::atto>::value)
+			return L"a";
+		else if constexpr (std::is_same<Period, std::femto>::value)
+			return L"f";
+		else if constexpr (std::is_same<Period, std::pico>::value)
+			return L"p";
+		else if constexpr (std::is_same<Period, std::nano>::value)
+			return L"n";
+		else if constexpr (std::is_same<Period, std::micro>::value)
+			return L"µ";
+		else if constexpr (std::is_same<Period, std::milli>::value)
+			return L"m";
+		else if constexpr (std::is_same<Period, std::centi>::value)
+			return L"c";
+		else if constexpr (std::is_same<Period, std::deci>::value)
+			return L"d";
+		else if constexpr (std::is_same<Period, std::deca>::value)
+			return L"da";
+		else if constexpr (std::is_same<Period, std::hecto>::value)
+			return L"h";
+		else if constexpr (std::is_same<Period, std::kilo>::value)
+			return L"k";
+		else if constexpr (std::is_same<Period, std::mega>::value)
+			return L"M";
+		else if constexpr (std::is_same<Period, std::giga>::value)
+			return L"G";
+		else if constexpr (std::is_same<Period, std::tera>::value)
+			return L"T";
+		else if constexpr (std::is_same<Period, std::peta>::value)
+			return L"P";
+		else if constexpr (std::is_same<Period, std::exa>::value)
+			return L"E";
+		else
+			return L"";
+	}
+}

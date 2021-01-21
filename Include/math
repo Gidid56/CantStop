@@ -1,0 +1,22 @@
+#pragma once
+#include <concepts>
+#include "named"
+
+using Percentage = Named<double, struct Probability_, Comparable, Unitless, Scalable, Summable>;
+using Probability = Percentage;
+
+constexpr Probability complementary(Probability p) { return{ 1 - p() }; }
+
+namespace math
+{
+	template<class T> concept PureNumber = std::is_arithmetic<T>::value;
+	
+	template<PureNumber T>
+	constexpr T power(T x, size_t n)
+	{
+		if (n == 0)
+			return 1;
+		else
+			return x * power(x, n - 1);
+	}
+}

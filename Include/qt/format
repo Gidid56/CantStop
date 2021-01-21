@@ -1,0 +1,64 @@
+#pragma once
+#include <QtWidgets>
+#include <chrono>
+#include "colors"
+#include "enums"
+#include "math"
+#include "physics"
+
+namespace qt
+{
+	constexpr auto precision{ 4 };
+
+	inline auto format(color::RGB const& rgb)
+	{
+		return QColor{ rgb.at(0), rgb.at(1), rgb.at(2) };
+	}
+
+	inline auto format(wchar_t const* string)
+	{
+		return QString::fromWCharArray(string);
+	}
+
+	inline auto format(std::string const& string)
+	{
+		return QString::fromStdString(string);
+	}
+
+	inline auto format(Percentage percentage)
+	{
+		return QLocale{}.toString(static_cast<double>(100 * percentage()), 'g', precision) + " %";
+	}
+
+	template<class Integer>
+	auto format(Integer integer) requires std::is_integral_v<Integer>
+	{
+		return QLocale{}.toString(integer);
+	}
+
+	template<class Enum>
+	auto format(Enum value) requires std::is_enum_v<Enum>
+	{
+		return QString::fromStdString(magic_enum::to_string(value));
+	}
+
+	template <typename Time, class Rep, class Period>
+	auto format(std::chrono::duration<Rep, Period> time)
+	{
+		return QLocale{}.toString(std::chrono::duration_cast<Time>(time).count())
+			+ ' ' + QString::fromWCharArray(unit::prefix<Time::period>()) + 's';
+	}
+
+	template <typename Floating>
+	auto format(Floating floating, const char* unit) requires std::is_floating_point_v<Floating>
+	{
+		int dimension{ 18 };
+
+		while (dimension >= -18
+			and std::abs(floating) < std::pow(10, dimension))
+			dimension -= 3;
+
+		return QLocale{}.toString(static_cast<double>(floating) * std::pow(10, -dimension), 'g', precision)
+			+ ' ' + QString::fromWCharArray(unit::prefix(dimension)) + unit;
+	}
+}

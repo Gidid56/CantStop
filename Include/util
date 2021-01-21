@@ -1,0 +1,36 @@
+#pragma once
+#include <array>
+#include <stdexcept>
+#include <tuple>
+
+namespace util
+{
+	template <class Tuple>
+	constexpr auto to_array(Tuple&& tuple)
+	{
+		constexpr auto get_array = [](auto&& ... x)
+		{
+			return std::array{ std::forward<decltype(x)>(x) ... };
+		};
+		return std::apply(get_array, std::forward<Tuple>(tuple));
+	}
+
+	template <class Key, class Value, size_t Size>
+	class Dict
+	{
+	public:
+		constexpr Value at(Key const& key) const
+		{
+			auto isKey = [&key](auto const& v) { return v.first == key; };
+			auto itr = std::find_if(std::begin(dict_), std::end(dict_), isKey);
+
+			if (itr != std::end(dict_))
+				return itr->second;
+			else 
+				throw std::range_error("invalid key in dict");
+		}
+
+	private:
+		std::array<std::pair<Key, Value>, Size> dict_;
+	};
+}

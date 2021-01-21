@@ -1,0 +1,169 @@
+#pragma once
+#include <compare>
+#include <string>
+
+template <class Type, class Identifier, template<class> class... Skills>
+class Named : public Skills<Named<Type, Identifier, Skills...>>...
+{
+public:
+	using type = Type;
+
+	constexpr Named() noexcept : value_{ 0 } {};
+	constexpr Named(Type const& value) noexcept : value_(value) {}
+	constexpr Named(Type&& value) noexcept
+		requires not std::is_reference_v<Type> : value_(std::move(value)) {}
+
+	constexpr Type& operator() () noexcept { return value_; }
+	constexpr const Type& operator() () const noexcept { return value_; }
+
+	using Reference = Named<Type&, Identifier, Skills...>;
+	constexpr operator Reference () noexcept
+	{
+		return Reference{ value_ };
+	}
+
+protected:
+	Type value_;
+};
+
+template <class Type, template<class> class CRTP_t>
+struct CRTP
+{
+	constexpr Type& self() noexcept { return static_cast<Type&>(*this); }
+	constexpr Type const& self() const noexcept { return static_cast<Type const&>(*this); }
+private:
+	constexpr CRTP() noexcept {}
+	friend CRTP_t<Type>;
+};
+
+template <class Type>
+struct Boolable : CRTP<Type, Boolable>
+{
+	constexpr explicit operator bool() const noexcept { return bool(this->self()()); }
+};
+
+template <class Type>
+struct Comparable : CRTP<Type, Comparable>
+{
+	constexpr auto operator <=>(Type other) const noexcept { return this->self()() <=> other(); }
+	constexpr auto operator ==(Type other) const noexcept { return not(this->self()() < other() or this->self()() > other()); }
+};
+
+template <class Type>
+struct Incrementable : CRTP<Type, Incrementable>
+{
+	constexpr Type operator ++() noexcept { return Type{ ++this->self()() }; }
+};
+
+template <class Type>
+struct Decrementable : CRTP<Type, Decrementable>
+{
+	constexpr Type operator --() noexcept { return Type{ --this->self()() }; }
+};
+
+template <class Type>
+struct Negatable : CRTP<Type, Negatable>
+{
+	static constexpr bool negatable{ true };
+
+	constexpr Type operator-() const noexcept { return Type{ -this->self()() }; }
+
+	constexpr int sign() const noexcept
+	{
+		if (this->self()() < 0) return -1;
+		else if (this->self()() > 0) return 1;
+		else return 0;
+	}
+};
+
+template<class Type> concept Negatable_ = Type::negatable;
+
+template <class Type>
+struct Summable : CRTP<Type, Summable>
+{
+	constexpr Type& operator +=(Type other) noexcept { this->self()() += other(); return this->self(); }
+
+	constexpr Type operator +(Type other) const noexcept { 
+		return Type{ static_cast<typename Type::type>(this->self()() + other()) }; }
+
+	template <Negatable_ Other>
+	constexpr Type& operator -=(Other other) noexcept { this->self()() -= other(); return this->self(); }
+	
+	template <Negatable_ Other>
+	constexpr Type operator -(Other other) const noexcept { 
+		return Type{ static_cast<typename Type::type>(this->self()() - other()) };
+	}
+};
+
+template <class Type>
+struct Unitless : CRTP<Type, Unitless>
+{
+	constexpr Type& operator *=(Type other) noexcept { this->self()() *= other(); return this->self(); }
+	constexpr Type& operator /=(Type other) noexcept { this->self()() /= other(); return this->self(); }
+
+	template <class Other>
+	constexpr auto operator *(Other other) const noexcept requires Other::scalable
+	{ return Other{ this->self()() * other() }; }
+
+	template <class Left>
+	constexpr inline friend auto operator *(Left left, Type right) noexcept requires Left::scalable
+	{ return Left{ left() * right() }; }
+
+	template <class Left>
+	constexpr inline friend auto operator /(Left left, Type right) noexcept requires Left::scalable
+	{ return Left{ left() / right() }; }
+};
+
+template<class Type> concept PureNumber = std::is_arithmetic<Type>::value;
+
+template <class Type>
+struct Scalable : CRTP<Type, Scalable>
+{
+	static constexpr bool scalable{ true };
+
+	template <PureNumber Other>
+	constexpr Type& operator *=(Other other) noexcept { this->self()() *= other; return this->self(); }
+	template <PureNumber Other>
+	constexpr Type& operator /=(Other other) noexcept { this->self()() /= other; return this->self(); }
+
+	template <PureNumber Other>
+	constexpr Type operator *(Other other) const noexcept { return Type{ this->self()() * other }; }
+	template <PureNumber Other>
+	constexpr Type operator /(Other other) const noexcept { return Type{ this->self()() / other }; }
+
+	template <PureNumber Left>
+	constexpr inline friend Type operator *(Left left, Type right) noexcept
+	{ return Type{ left * right() }; }
+
+	constexpr double operator /(Type divisor) const noexcept
+	{ return static_cast<double>(this->self()()) / static_cast<double>(divisor()); }
+};
+
+template<class Type>
+struct Printable : CRTP<Type, Printable>
+{
+	constexpr std::string to_string() const noexcept requires PureNumber<typename Type::type>
+	{
+		return std::to_string(this->self()());
+	}
+};
+
+template<class Type>
+struct Hashable : CRTP<Type, Hashable>
+{
+	static constexpr bool hashable{ true };
+};
+
+template<class Type> concept Hashable_ = Type::hashable;
+
+namespace std
+{
+	template <Hashable_ Type>
+	struct hash<Type>
+	{
+		constexpr std::size_t operator() (Type const& value) const noexcept
+		{
+			return std::hash<typename Type::type>{}(value.self()());
+		}
+	};
+}

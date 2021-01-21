@@ -1,0 +1,14 @@
+#pragma once
+#include <regex>
+#include "magic_enum/magic_enum.h"
+
+namespace magic_enum
+{
+	template <typename Enum>
+	[[nodiscard]] constexpr auto to_string(Enum value) noexcept requires std::is_enum_v<Enum> {
+		return std::regex_replace(
+			std::regex_replace(std::string{ enum_name<Enum>(value) },
+				std::regex{ R"(_)" }, " "),
+			std::regex{ "^ +| +$|( ) +" }, "$1");
+	}
+}

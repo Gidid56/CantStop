@@ -1,0 +1,37 @@
+#pragma once
+#include "qt/format"
+#include "enums"
+
+namespace qt::comboBox
+{
+	template<class Enum>
+	inline void fill(QComboBox* comboBox)
+	{
+		for (auto& value : magic_enum::enum_values<Enum>())
+		{
+			comboBox->addItem(qt::format(value));
+		}
+	}
+}
+
+template<class Enum>
+class EnumComboBox : public QComboBox
+{
+public:
+	explicit EnumComboBox(QWidget* parent = nullptr)
+		: QComboBox{ parent }
+	{
+		qt::comboBox::fill<Enum>(this);
+	}
+	~EnumComboBox() {}
+
+	Enum current() const
+	{
+		return *magic_enum::enum_cast<Enum>(this->currentIndex());
+	}
+
+	void setCurrent(Enum value)
+	{
+		QComboBox::setCurrentIndex(magic_enum::enum_integer(value));
+	}
+};
