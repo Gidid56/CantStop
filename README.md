@@ -15,3 +15,4 @@
 * Calculates gain for every possible move
 * Accounts for compound gain in a single turn
 * Prioritizes columns with high progress
+* Display AI evaluation by pressing F1
